@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
 
+import * as os from 'os';
+import * as path from 'path';
+
 let client: LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
@@ -17,11 +20,14 @@ export function activate(context: vscode.ExtensionContext) {
 		documentSelector: [{ scheme: "file", language: "markdown" }]
 	};
 
+	let homeDir = os.homedir();
+	let zetaNoteServer = path.join(homeDir, 'dev', 'zeta-note');
+
 	let serverOptions: ServerOptions = {
 		command: "cargo",
 		args: ["run"],
 		options: {
-			cwd: "/Users/arr/dev/zeta-note"
+			cwd: zetaNoteServer
 		}
 	};
 	client = new LanguageClient("zeta-note", "Zeta Note", serverOptions, clientOptions, true);
