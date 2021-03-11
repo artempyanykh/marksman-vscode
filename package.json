@@ -19,6 +19,10 @@
       {
         "command": "zeta-note-vscode.restartServer",
         "title": "Zeta Note: Restart Server"
+      },
+      {
+        "command": "zeta-note-vscode.showOutputChannel",
+        "title": "Zeta Note: Show Output"
       }
     ]
   },
