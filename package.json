@@ -17,14 +17,40 @@
   "contributes": {
     "commands": [
       {
-        "command": "zeta-note-vscode.restartServer",
+        "command": "zetaNote.restartServer",
         "title": "Zeta Note: Restart Server"
       },
       {
-        "command": "zeta-note-vscode.showOutputChannel",
+        "command": "zetaNote.showOutputChannel",
         "title": "Zeta Note: Show Output"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Zeta Note",
+      "properties": {
+        "zetaNote.customCommand": {
+          "type": "string",
+          "description": "When set use this command to run the language server.\nThe command is split on spaces: first part is the command name, the rest is the arguments.",
+          "scope": "window"
+        },
+        "zetaNote.customCommandDir": {
+          "type": "string",
+          "markdownDescription": "When set run the `#zetaNote.customCommand#` from this dir rather than workspace root.",
+          "scope": "window"
+        },
+        "zetaNote.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "verbose",
+          "description": "Level of verbosity in communicating with the server",
+          "scope": "window"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -35,13 +61,15 @@
     "test": "node ./out/test/runTest.js"
   },
   "dependencies": {
-    "vscode-languageclient": "7.0.0"
+    "vscode-languageclient": "7.0.0",
+    "which": "2.0.2"
   },
   "devDependencies": {
     "@types/glob": "^7.1.3",
     "@types/mocha": "^8.0.4",
     "@types/node": "^12.11.7",
     "@types/vscode": "^1.54.0",
+    "@types/which": "1.3.1",
     "@typescript-eslint/eslint-plugin": "^4.14.1",
     "@typescript-eslint/parser": "^4.14.1",
     "eslint": "^7.19.0",

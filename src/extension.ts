@@ -1,94 +1,190 @@
 import * as vscode from 'vscode';
-import { LanguageClient, LanguageClientOptions, NotificationType, ServerOptions } from 'vscode-languageclient/node';
+import { LanguageClient, LanguageClientOptions, NotificationType, ServerOptions, State } from 'vscode-languageclient/node';
 
 import * as os from 'os';
-import * as path from 'path';
+import * as which from 'which';
 
-let client: LanguageClient;
+let client: LanguageClient | null;
 let statusBarItem: vscode.StatusBarItem;
 
+type RunState = "init" | "dead" | "ok";
+
 type StatusParams = {
-	ok: boolean,
+	state: RunState,
 	notes: number
 };
+const defaultStatus: StatusParams = { state: "init", notes: 0 };
+const deadStatus: StatusParams = { state: "dead", notes: 0 };
+
+const extId = "zetaNote";
+const extName = "Zeta Note";
 
 const statusNotificationType = new NotificationType<StatusParams>("zeta-note/status");
 
-export function activate(context: vscode.ExtensionContext) {
-	console.log('Congratulations, your extension "zeta-note-vscode" is now active!');
+export async function activate(context: vscode.ExtensionContext) {
+	// Create a status
+	statusBarItem = createDefaultStatus();
+	statusBarItem.show();
 
-	let restartServerCmd = vscode.commands.registerCommand('zeta-note-vscode.restartServer', async () => {
+	client = await connectToServer(statusBarItem);
+
+	// Setup commands
+	let restartServerCmd = vscode.commands.registerCommand(`${extId}.restartServer`, async () => {
 		stopClient(client);
-		resetStatus();
+		updateStatus(statusBarItem, defaultStatus);
 
-		client = new LanguageClient("zeta-note", "Zeta Note", serverOptions, clientOptions, true);
-		configureClient(client);
-		context.subscriptions.push(client.start());
+		client = await connectToServer(statusBarItem);
+		if (client) {
+			context.subscriptions.push(client.start());
+		}
 	});
-	context.subscriptions.push(restartServerCmd);
-
-	let showOutputCmd = vscode.commands.registerCommand('zeta-note-vscode.showOutputChannel', () => {
+	let showOutputCmd = vscode.commands.registerCommand(`${extId}.showOutputChannel`, () => {
 		if (client) {
 			let outputchannel = client.outputChannel;
 			outputchannel.show(true);
 		}
 	});
-	context.subscriptions.push(showOutputCmd);
 
-	let clientOptions: LanguageClientOptions = {
-		documentSelector: [{ scheme: "file", language: "markdown" }]
-	};
-
-	let homeDir = os.homedir();
-	let zetaNoteServer = path.join(homeDir, 'dev', 'zeta-note');
-
-	let serverOptions: ServerOptions = {
-		command: "cargo",
-		args: ["run"],
-		options: {
-			cwd: zetaNoteServer
-		}
-	};
-	client = new LanguageClient("zeta-note", "Zeta Note", serverOptions, clientOptions, true);
-	configureClient(client);
-
-	createDefaultStatusBarItem();
-
+	if (client) {
+		context.subscriptions.push(client.start());
+	}
 	context.subscriptions.push(
-		client.start(),
 		restartServerCmd,
 		showOutputCmd,
 	);
 }
 
+async function connectToServer(status: vscode.StatusBarItem): Promise<LanguageClient | null> {
+	// Try to find the server binary and create ServerOptions
+	// Return early if no binary can be found
+	let serverOptions: ServerOptions;
+	let maybeServerOptions: ServerOptions | null = await mkServerOptions();
+	if (maybeServerOptions === null) {
+		console.error(`Couldn't find ${serverBinName()} server binary`);
+		updateStatus(status, deadStatus);
+		return null;
+	} else {
+		serverOptions = maybeServerOptions;
+	}
+
+	// Init LS client
+	let clientOptions: LanguageClientOptions = {
+		documentSelector: [{ scheme: "file", language: "markdown" }]
+	};
+
+	return createClient(serverOptions, clientOptions);
+}
+
+async function mkServerOptions(): Promise<ServerOptions | null> {
+	let fromConfig = mkServerOptionsFromConfig();
+	if (fromConfig) {
+		return fromConfig;
+	}
+
+	let binInPath = await findServerInPath();
+	if (binInPath) {
+		return {
+			command: binInPath,
+		};
+	}
+
+	return null;
+}
+
+function mkServerOptionsFromConfig(): ServerOptions | null {
+	let extConf = vscode.workspace.getConfiguration(`${extId}`);
+	let customCommand = extConf.get<string>('customCommand');
+	let customCommandDir = extConf.get<string>('customCommandDir');
+	if (customCommand) {
+		let [command, ...args] = customCommand.split(" ");
+		let options = {};
+		if (customCommandDir) {
+			options = { cwd: customCommandDir };
+		}
+
+		return {
+			command: command,
+			args: args,
+			options: options
+		};
+	} else {
+		return null;
+	}
+}
+
+function serverBinName(): string {
+	let platform = os.platform();
+	if (platform === 'win32') {
+		return 'zeta-note.exe';
+	} else if (platform === 'darwin' || platform === 'linux') {
+		return 'zeta-note';
+	} else {
+		throw new Error(`Unsupported platform: ${platform}`);
+	}
+}
+
+async function findServerInPath(): Promise<string | null> {
+	let binName = serverBinName();
+	let inPath = new Promise<string>((resolve, reject) => {
+		which(binName, (err, path) => {
+			if (err) {
+				reject(err);
+			}
+			if (path === undefined) {
+				reject(new Error('which return undefined path'));
+			} else {
+				resolve(path);
+			}
+		});
+	});
+
+	let resolved = await inPath.catch((_) => null);
+	return resolved;
+}
+
+function createClient(serverOptions: ServerOptions, clientOptions: LanguageClientOptions): LanguageClient {
+	let client = new LanguageClient(extId, extName, serverOptions, clientOptions);
+	configureClient(client);
+	return client;
+}
+
 function configureClient(client: LanguageClient) {
 	client.onReady().then(() => {
-		console.log("Client onReady");
+		console.log('Client onReady');
 
 		client.onNotification(statusNotificationType, (statusParams) => {
-			console.log("Got zeta-note/status notification");
-			updateStatus(statusParams);
+			console.log('Got zeta-note/status notification');
+			updateStatus(statusBarItem, statusParams);
 		});
+	});
+	client.onDidChangeState((ev) => {
+		if (ev.newState === State.Stopped) {
+			updateStatus(statusBarItem, deadStatus);
+		}
 	});
 }
 
-function createDefaultStatusBarItem() {
-	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
-	statusBarItem.command = 'zeta-note-vscode.showOutputChannel';
-	resetStatus();
-	statusBarItem.show();
+function createDefaultStatus(): vscode.StatusBarItem {
+	let item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
+	item.command = `${extId}.showOutputChannel`;
+	updateStatus(item, defaultStatus);
+	return item;
 }
 
-function updateStatus(statusParams: StatusParams) {
-	let status = statusParams.ok ? `✓ ZN (${statusParams.notes})` : '☠️ ZN';
-	statusBarItem.text = status;
+function updateStatus(item: vscode.StatusBarItem, statusParams: StatusParams) {
+	let status;
+	if (statusParams.state === "init") {
+		status = "? ZN";
+	} else if (statusParams.state === "ok") {
+		status = `✓ ZN (${statusParams.notes})`;
+	} else {
+		status = '☠️ ZN';
+	}
+
+	item.text = status;
 }
 
-function resetStatus() {
-	statusBarItem.text = "? ZN";
-}
-
-async function stopClient(client: LanguageClient) {
+async function stopClient(client: LanguageClient | null) {
 	if (client) {
 		await client.stop();
 		client.outputChannel.dispose();
