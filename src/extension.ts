@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { LanguageClient, LanguageClientOptions, NotificationType, ServerOptions, State } from 'vscode-languageclient/node';
+import { ExecutableOptions, LanguageClient, LanguageClientOptions, NotificationType, ServerOptions, State } from 'vscode-languageclient/node';
 
 import * as os from 'os';
 import * as which from 'which';
@@ -97,7 +97,7 @@ function mkServerOptionsFromConfig(): ServerOptions | null {
 	let customCommandDir = extConf.get<string>('customCommandDir');
 	if (customCommand) {
 		let [command, ...args] = customCommand.split(" ");
-		let options = {};
+		let options: ExecutableOptions = {};
 		if (customCommandDir) {
 			options = { cwd: customCommandDir };
 		}

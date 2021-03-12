@@ -1,6 +1,6 @@
 {
   "name": "zeta-note-vscode",
-  "displayName": "Zeta Note VSCode",
+  "displayName": "Zeta Note",
   "description": "Delightful note taking in Markdown",
   "version": "0.0.1",
   "engines": {
