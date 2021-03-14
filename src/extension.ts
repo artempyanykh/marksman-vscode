@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ExecutableOptions, LanguageClient, LanguageClientOptions, NotificationType, ServerOptions, State } from 'vscode-languageclient/node';
+import { ExecutableOptions, URI, Position, LanguageClient, LanguageClientOptions, NotificationType, ServerOptions, State, Location } from 'vscode-languageclient/node';
 
 import * as os from 'os';
 import * as which from 'which';
@@ -20,6 +20,12 @@ const extId = "zetaNote";
 const extName = "Zeta Note";
 
 const statusNotificationType = new NotificationType<StatusParams>("zeta-note/status");
+
+type ShowReferencesData = {
+	uri: URI,
+	position: Position,
+	locations: Location[]
+};
 
 export async function activate(context: vscode.ExtensionContext) {
 	// Create a status
@@ -44,6 +50,16 @@ export async function activate(context: vscode.ExtensionContext) {
 			outputchannel.show(true);
 		}
 	});
+	let showReferencesCmd = vscode.commands.registerCommand(`${extId}.showReferences`, async (data: ShowReferencesData) => {
+		if (client) {
+			await vscode.commands.executeCommand(
+				'editor.action.showReferences',
+				vscode.Uri.parse(data.uri),
+				client.protocol2CodeConverter.asPosition(data.position),
+				data.locations.map(client.protocol2CodeConverter.asLocation),
+			);
+		}
+	});
 
 	if (client) {
 		context.subscriptions.push(client.start());
@@ -51,6 +67,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		restartServerCmd,
 		showOutputCmd,
+		showReferencesCmd,
 	);
 }
 
