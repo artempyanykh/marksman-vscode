@@ -9,15 +9,15 @@ See the [project page][zn] for more detailed information.
 ## Screenshots
 
 - Hover preview:
-  ![Hover](assets/readme/hover.png)
+  ![Hover](./assets/readme/hover.png)
 - Completion (note):
-  ![Completion for note](assets/readme/completion-note.png)
+  ![Completion for note](./assets/readme/completion-note.png)
 - Completion (heading):
-  ![Completion for heading](assets/readme/completion-heading.png)
+  ![Completion for heading](./assets/readme/completion-heading.png)
 - "Show References" Code Lens:
-  ![Show references code lens](assets/readme/code-lens-show-refs.png)
+  ![Show references code lens](./assets/readme/code-lens-show-refs.png)
 - Project-wide diagnostics for broken references:
-  ![Diagnostics](assets/readme/diagnostics.png)
+  ![Diagnostics](./assets/readme/diagnostics.png)
 
 ## Installation
 

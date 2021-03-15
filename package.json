@@ -1,7 +1,12 @@
 {
   "name": "zeta-note",
   "displayName": "Zeta Note",
-  "description": "Delightful note taking in markdown",
+  "description": "Delightful note taking in Markdown",
+  "icon": "assets/logo.png",
+  "galleryBanner": {
+    "color": "#dbeae9",
+    "theme": "light"
+  },
   "publisher": "arr",
   "version": "0.0.1",
   "license": "SEE LICENSE IN LICENSE",
@@ -10,6 +15,18 @@
   },
   "categories": [
     "Other"
+  ],
+  "keywords": [
+    "markdown",
+    "note",
+    "notes",
+    "link",
+    "links",
+    "references",
+    "crossreference",
+    "zettelkasten",
+    "roam",
+    "lsp"
   ],
   "activationEvents": [
     "onLanguage:markdown",
