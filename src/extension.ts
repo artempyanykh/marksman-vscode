@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ExecutableOptions, URI, Position, LanguageClient, LanguageClientOptions, NotificationType, ServerOptions, State, Location } from 'vscode-languageclient/node';
+import { ExecutableOptions, URI, StaticFeature, Position, LanguageClient, LanguageClientOptions, NotificationType, ServerOptions, State, Location, ClientCapabilities, DocumentSelector, InitializeParams, ServerCapabilities } from 'vscode-languageclient/node';
 
 import * as os from 'os';
 import * as which from 'which';
@@ -26,6 +26,26 @@ type ShowReferencesData = {
 	position: Position,
 	locations: Location[]
 };
+
+type ExperimentalCapabilities = {
+	codeLensShowReferences?: boolean
+};
+
+class ExperimentalFeatures implements StaticFeature {
+	fillClientCapabilities(capabilities: ClientCapabilities): void {
+		const experimental: ExperimentalCapabilities = capabilities.experimental ?? {};
+		experimental.codeLensShowReferences = true;
+
+		capabilities.experimental = experimental;
+	}
+
+	initialize(_capabilities: ServerCapabilities<any>, _documentSelector: DocumentSelector | undefined): void {
+	}
+
+	dispose(): void {
+	}
+
+}
 
 export async function activate(context: vscode.ExtensionContext) {
 	// Create a status
@@ -166,6 +186,8 @@ function createClient(serverOptions: ServerOptions, clientOptions: LanguageClien
 }
 
 function configureClient(client: LanguageClient) {
+	client.registerFeature(new ExperimentalFeatures());
+
 	client.onReady().then(() => {
 		console.log('Client onReady');
 
