@@ -1,7 +1,7 @@
 {
   "name": "zeta-note",
   "displayName": "Zeta Note",
-  "description": "Delightful note taking in Markdown",
+  "description": "Delightful note taking in Markdown with cross-references and diagnostics.",
   "icon": "assets/logo.png",
   "galleryBanner": {
     "color": "#dbeae9",
