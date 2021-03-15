@@ -1,8 +1,10 @@
 {
-  "name": "zeta-note-vscode",
+  "name": "zeta-note",
   "displayName": "Zeta Note",
   "description": "Delightful note taking in markdown",
+  "publisher": "arr",
   "version": "0.0.1",
+  "license": "SEE LICENSE IN LICENSE",
   "engines": {
     "vscode": "^1.54.0"
   },
@@ -11,7 +13,7 @@
   ],
   "activationEvents": [
     "onLanguage:markdown",
-    "onCommand:zeta-note-vscode.restartServer"
+    "onCommand:zetaNote.restartServer"
   ],
   "main": "./out/extension.js",
   "contributes": {
