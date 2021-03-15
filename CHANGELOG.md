@@ -1,9 +1,8 @@
 # Change Log
 
-All notable changes to the "zeta-note-vscode" extension will be documented in this file.
-
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
 ## [Unreleased]
 
-- Initial release
+- Integration with Zeta Note langugage server.
+- Add a command to restart 'Zeta Note' server.
+- Add a status bar item with the status of Zeta Note server.
+- Support `showReferences` code lens.

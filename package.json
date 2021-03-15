@@ -1,7 +1,7 @@
 {
   "name": "zeta-note-vscode",
   "displayName": "Zeta Note",
-  "description": "Delightful note taking in Markdown",
+  "description": "Delightful note taking in markdown",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.54.0"
@@ -77,5 +77,9 @@
     "mocha": "^8.2.1",
     "typescript": "^4.1.3",
     "vscode-test": "^1.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/artempyanykh/zeta-note-vscode"
   }
 }
