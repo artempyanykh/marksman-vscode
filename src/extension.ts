@@ -1,5 +1,19 @@
 import * as vscode from 'vscode';
-import { ExecutableOptions, URI, StaticFeature, Position, LanguageClient, LanguageClientOptions, NotificationType, ServerOptions, State, Location, ClientCapabilities, DocumentSelector, InitializeParams, ServerCapabilities } from 'vscode-languageclient/node';
+import {
+	ExecutableOptions,
+	URI,
+	StaticFeature,
+	Position,
+	LanguageClient,
+	LanguageClientOptions,
+	NotificationType,
+	ServerOptions,
+	State,
+	Location,
+	ClientCapabilities,
+	DocumentSelector,
+	ServerCapabilities
+} from 'vscode-languageclient/node';
 
 import * as os from 'os';
 import * as which from 'which';
@@ -27,14 +41,21 @@ type ShowReferencesData = {
 	locations: Location[]
 };
 
+type FollowLinkData = {
+	from: Location,
+	to: Location,
+};
+
 type ExperimentalCapabilities = {
-	codeLensShowReferences?: boolean
+	codeLensShowReferences?: boolean,
+	followLinks?: boolean
 };
 
 class ExperimentalFeatures implements StaticFeature {
 	fillClientCapabilities(capabilities: ClientCapabilities): void {
 		const experimental: ExperimentalCapabilities = capabilities.experimental ?? {};
 		experimental.codeLensShowReferences = true;
+		experimental.followLinks = true;
 
 		capabilities.experimental = experimental;
 	}
@@ -80,6 +101,21 @@ export async function activate(context: vscode.ExtensionContext) {
 			);
 		}
 	});
+	let followLinkCmd = vscode.commands.registerCommand(`${extId}.followLink`, async (data: FollowLinkData) => {
+		if (client) {
+			const fromLoc = client.protocol2CodeConverter.asLocation(data.from);
+			const toLoc = client.protocol2CodeConverter.asLocation(data.to);
+			await vscode.commands.executeCommand(
+				'editor.action.goToLocations',
+				fromLoc.uri,
+				fromLoc.range.start,
+				[toLoc],
+				"goto",
+				"Couldn't locate the target of the link"
+
+			);
+		}
+	});
 
 	if (client) {
 		context.subscriptions.push(client.start());
@@ -88,6 +124,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		restartServerCmd,
 		showOutputCmd,
 		showReferencesCmd,
+		followLinkCmd
 	);
 }
 
