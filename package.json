@@ -29,7 +29,7 @@
     "lsp"
   ],
   "activationEvents": [
-    "onLanguage:markdown",
+    "workspaceContains:.zeta.toml",
     "onCommand:zetaNote.restartServer"
   ],
   "main": "./dist/extension.js",

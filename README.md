@@ -21,12 +21,17 @@ See the [project page][zn] for more detailed information.
 
 ## Installation
 
-The extension will prompt you to download Zeta Note language server. This is
-the easiest way to get started.
+1. **Get `zeta-note` server binary**.
+   The extension will try to automatically download Zeta Note language server
+   from GH releases. This is the easiest way to get started.
 
-An alternative is to either download `zeta-note` binary from the [releases
-page][zn-releases] or to build `zeta-note` from source. Put it somewhere in
-your `PATH` and you should be good to go.
+   An alternative is to either download `zeta-note` binary from the [releases
+   page][zn-releases] or to build `zeta-note` from source. Put it somewhere in
+   your `PATH` and you should be good to go.
+2. **Add `.zeta.toml` to your workspace root folder**.
+   The extension is automatically activated only when `.zeta.toml` file is
+   present. This is done to avoid running Zeta Note on random Markdown files,
+   but rather only inside your notes folder.
 
 ## Extension Settings
 
