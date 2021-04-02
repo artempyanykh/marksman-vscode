@@ -17,6 +17,11 @@ import {
 
 import * as os from 'os';
 import * as which from 'which';
+import * as fs from 'fs';
+
+import fetch from 'node-fetch';
+import * as stream from 'stream';
+import { promisify } from 'util';
 
 let client: LanguageClient | null;
 let statusBarItem: vscode.StatusBarItem;
@@ -32,6 +37,8 @@ const deadStatus: StatusParams = { state: "dead", notes: 0 };
 
 const extId = "zetaNote";
 const extName = "Zeta Note";
+const compatibleServerRelease = "2021-04-02";
+const releaseBaseUrl = "https://github.com/artempyanykh/zeta-note/releases/download";
 
 const statusNotificationType = new NotificationType<StatusParams>("zeta-note/status");
 
@@ -73,14 +80,14 @@ export async function activate(context: vscode.ExtensionContext) {
 	statusBarItem = createDefaultStatus();
 	statusBarItem.show();
 
-	client = await connectToServer(statusBarItem);
+	client = await connectToServer(context, statusBarItem);
 
 	// Setup commands
 	let restartServerCmd = vscode.commands.registerCommand(`${extId}.restartServer`, async () => {
 		stopClient(client);
 		updateStatus(statusBarItem, defaultStatus);
 
-		client = await connectToServer(statusBarItem);
+		client = await connectToServer(context, statusBarItem);
 		if (client) {
 			context.subscriptions.push(client.start());
 		}
@@ -128,11 +135,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	);
 }
 
-async function connectToServer(status: vscode.StatusBarItem): Promise<LanguageClient | null> {
+async function connectToServer(context: vscode.ExtensionContext, status: vscode.StatusBarItem): Promise<LanguageClient | null> {
 	// Try to find the server binary and create ServerOptions
 	// Return early if no binary can be found
 	let serverOptions: ServerOptions;
-	let maybeServerOptions: ServerOptions | null = await mkServerOptions();
+	let maybeServerOptions: ServerOptions | null = await mkServerOptions(context);
 	if (maybeServerOptions === null) {
 		console.error(`Couldn't find ${serverBinName()} server binary`);
 		updateStatus(status, deadStatus);
@@ -149,7 +156,7 @@ async function connectToServer(status: vscode.StatusBarItem): Promise<LanguageCl
 	return createClient(serverOptions, clientOptions);
 }
 
-async function mkServerOptions(): Promise<ServerOptions | null> {
+async function mkServerOptions(context: vscode.ExtensionContext): Promise<ServerOptions | null> {
 	let fromConfig = mkServerOptionsFromConfig();
 	if (fromConfig) {
 		return fromConfig;
@@ -162,7 +169,7 @@ async function mkServerOptions(): Promise<ServerOptions | null> {
 		};
 	}
 
-	return null;
+	return await downloadServerFromGH(context);
 }
 
 function mkServerOptionsFromConfig(): ServerOptions | null {
@@ -195,6 +202,105 @@ function serverBinName(): string {
 	} else {
 		throw new Error(`Unsupported platform: ${platform}`);
 	}
+}
+
+function releaseBinName(): string {
+	const platform = os.platform();
+
+	if (platform === 'win32') {
+		return 'zeta-note-windows.exe';
+	} else if (platform === 'darwin') {
+		return 'zeta-note-macos';
+	} else if (platform === 'linux') {
+		return 'zeta-note-linux';
+	} else {
+		throw new Error(`Unsupported platform: ${platform}`);
+	}
+}
+
+function releaseDownloadUrl(): string {
+	return releaseBaseUrl + "/" + compatibleServerRelease + "/" + releaseBinName();
+}
+
+async function downloadRelease(targetDir: vscode.Uri, onProgress: (progress: number) => void): Promise<void> {
+	const targetFile = vscode.Uri.joinPath(targetDir, serverBinName());
+	const tempName = (Math.round(Math.random() * 100) + 1).toString();
+	const tempFile = vscode.Uri.joinPath(targetDir, tempName);
+	const downloadUrl = releaseDownloadUrl();
+
+	console.log(`Downloading from ${downloadUrl}; destination file ${tempFile.fsPath}`);
+	const resp = await fetch(downloadUrl);
+
+	if (!resp.ok) {
+		console.error("Couldn't download the server binary");
+		console.error({ body: await resp.text() });
+		return;
+	}
+
+	const contentLength = resp.headers.get('content-length');
+	if (contentLength === null || Number.isNaN(contentLength)) {
+		console.error(`Unexpected content-length: ${contentLength}`);
+		return;
+	}
+	let totalBytes = Number.parseInt(contentLength);
+	console.log(`The size of the binary is ${totalBytes} bytes`);
+
+	let currentBytes = 0;
+	let reportedPercent = 0;
+	resp.body.on('data', (chunk) => {
+		currentBytes = currentBytes + chunk.length;
+		let currentPercent = Math.floor(currentBytes / totalBytes * 100);
+		if (currentPercent > reportedPercent) {
+			onProgress(currentPercent);
+			reportedPercent = currentPercent;
+		}
+	});
+
+	const destStream = fs.createWriteStream(tempFile.fsPath);
+	const downloadProcess = promisify(stream.pipeline);
+	await downloadProcess(resp.body, destStream);
+
+	console.log(`Downloaded the binary to ${tempFile.fsPath}`);
+	await vscode.workspace.fs.rename(tempFile, targetFile);
+	await fs.promises.chmod(targetFile.fsPath, 0o755);
+}
+
+async function downloadServerFromGH(context: vscode.ExtensionContext): Promise<ServerOptions | null> {
+	const targetDir = vscode.Uri.joinPath(context.globalStorageUri, compatibleServerRelease);
+	await vscode.workspace.fs.createDirectory(targetDir);
+	const targetFile = vscode.Uri.joinPath(targetDir, serverBinName());
+
+	let serverPath;
+
+	try {
+		await vscode.workspace.fs.stat(targetFile);
+		console.log("zeta-note binary is already downloaded");
+	} catch {
+		// The file doesn't exist. Continue to download
+		await vscode.window.withProgress({
+			cancellable: false,
+			title: `Downloading Zeta-Note ${compatibleServerRelease} from GH`,
+			location: vscode.ProgressLocation.Notification
+		}, async (progress, _cancellationToken) => {
+			let lastPercent = 0;
+			const serverPath = await downloadRelease(targetDir, (percent) => {
+				progress.report({ message: `${percent}%`, increment: percent - lastPercent });
+				lastPercent = percent;
+			});
+		});
+	}
+
+	serverPath = targetFile.fsPath;
+	try {
+		await vscode.workspace.fs.stat(targetFile);
+		return {
+			command: serverPath
+		};
+	} catch {
+		console.error("Failed to download zeta-note server binary");
+		return null;
+	}
+
 }
 
 async function findServerInPath(): Promise<string | null> {
