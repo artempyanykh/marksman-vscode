@@ -37,7 +37,7 @@ const deadStatus: StatusParams = { state: "dead", notes: 0 };
 
 const extId = "zetaNote";
 const extName = "Zeta Note";
-const compatibleServerRelease = "2021-04-02";
+const compatibleServerRelease = "2021-08-11";
 const releaseBaseUrl = "https://github.com/artempyanykh/zeta-note/releases/download";
 
 const statusNotificationType = new NotificationType<StatusParams>("zeta-note/status");
