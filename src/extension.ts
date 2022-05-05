@@ -35,12 +35,12 @@ type StatusParams = {
 const defaultStatus: StatusParams = { state: "init", notes: 0 };
 const deadStatus: StatusParams = { state: "dead", notes: 0 };
 
-const extId = "zetaNote";
-const extName = "Zeta Note";
+const extId = "marksman";
+const extName = "Marksman";
 const compatibleServerRelease = "2021-08-11";
 const releaseBaseUrl = "https://github.com/artempyanykh/zeta-note/releases/download";
 
-const statusNotificationType = new NotificationType<StatusParams>("zeta-note/status");
+const statusNotificationType = new NotificationType<StatusParams>("marksman/status");
 
 type ShowReferencesData = {
 	uri: URI,
@@ -196,9 +196,9 @@ function mkServerOptionsFromConfig(): ServerOptions | null {
 function serverBinName(): string {
 	let platform = os.platform();
 	if (platform === 'win32') {
-		return 'zeta-note.exe';
+		return 'marksman.exe';
 	} else if (platform === 'darwin' || platform === 'linux') {
-		return 'zeta-note';
+		return 'marksman';
 	} else {
 		throw new Error(`Unsupported platform: ${platform}`);
 	}
@@ -208,11 +208,11 @@ function releaseBinName(): string {
 	const platform = os.platform();
 
 	if (platform === 'win32') {
-		return 'zeta-note-windows.exe';
+		return 'marksman-windows.exe';
 	} else if (platform === 'darwin') {
-		return 'zeta-note-macos';
+		return 'marksman-macos';
 	} else if (platform === 'linux') {
-		return 'zeta-note-linux';
+		return 'marksman-linux';
 	} else {
 		throw new Error(`Unsupported platform: ${platform}`);
 	}
@@ -274,12 +274,12 @@ async function downloadServerFromGH(context: vscode.ExtensionContext): Promise<S
 
 	try {
 		await vscode.workspace.fs.stat(targetFile);
-		console.log("zeta-note binary is already downloaded");
+		console.log("marksman binary is already downloaded");
 	} catch {
 		// The file doesn't exist. Continue to download
 		await vscode.window.withProgress({
 			cancellable: false,
-			title: `Downloading Zeta-Note ${compatibleServerRelease} from GH`,
+			title: `Downloading marksman ${compatibleServerRelease} from GH`,
 			location: vscode.ProgressLocation.Notification
 		}, async (progress, _cancellationToken) => {
 			let lastPercent = 0;
@@ -297,7 +297,7 @@ async function downloadServerFromGH(context: vscode.ExtensionContext): Promise<S
 			command: serverPath
 		};
 	} catch {
-		console.error("Failed to download zeta-note server binary");
+		console.error("Failed to download marksman server binary");
 		return null;
 	}
 
@@ -335,7 +335,7 @@ function configureClient(client: LanguageClient) {
 		console.log('Client onReady');
 
 		client.onNotification(statusNotificationType, (statusParams) => {
-			console.log('Got zeta-note/status notification');
+			console.log('Got marksman/status notification');
 			updateStatus(statusBarItem, statusParams);
 		});
 	});
@@ -356,11 +356,11 @@ function createDefaultStatus(): vscode.StatusBarItem {
 function updateStatus(item: vscode.StatusBarItem, statusParams: StatusParams) {
 	let status;
 	if (statusParams.state === "init") {
-		status = "? ZN";
+		status = "? MN";
 	} else if (statusParams.state === "ok") {
-		status = `✓ ZN (${statusParams.notes})`;
+		status = `✓ MN (${statusParams.notes})`;
 	} else {
-		status = '☠️ ZN';
+		status = '☠️ MN';
 	}
 
 	item.text = status;

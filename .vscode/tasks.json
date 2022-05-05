@@ -11,23 +11,12 @@
 			"presentation": {
 				"reveal": "never"
 			},
-			"group": "build",
-			"label": "npm: watch",
-			"detail": "tsc -watch -p ./"
-		},
-		{
-			"type": "npm",
-			"script": "webpack-dev",
-			"problemMatcher": [
-				"$ts-webpack-watch"
-			],
-			"isBackground": true,
-			"label": "npm: webpack-dev",
-			"detail": "webpack --mode development --watch",
 			"group": {
 				"kind": "build",
 				"isDefault": true
-			}
+			},
+			"label": "npm: watch",
+			"detail": "tsc -watch -p ./"
 		}
 	]
 }
