@@ -30,10 +30,10 @@ type RunState = "init" | "dead" | "ok";
 
 type StatusParams = {
 	state: RunState,
-	notes: number
+	docCount: number
 };
-const defaultStatus: StatusParams = { state: "init", notes: 0 };
-const deadStatus: StatusParams = { state: "dead", notes: 0 };
+const defaultStatus: StatusParams = { state: "init", docCount: 0 };
+const deadStatus: StatusParams = { state: "dead", docCount: 0 };
 
 const extId = "marksman";
 const extName = "Marksman";
@@ -56,6 +56,7 @@ type FollowLinkData = {
 type ExperimentalCapabilities = {
 	codeLensShowReferences?: boolean,
 	followLinks?: boolean
+	statusNotification?: boolean
 };
 
 class ExperimentalFeatures implements StaticFeature {
@@ -63,6 +64,7 @@ class ExperimentalFeatures implements StaticFeature {
 		const experimental: ExperimentalCapabilities = capabilities.experimental ?? {};
 		experimental.codeLensShowReferences = true;
 		experimental.followLinks = true;
+		experimental.statusNotification = true;
 
 		capabilities.experimental = experimental;
 	}
@@ -358,7 +360,7 @@ function updateStatus(item: vscode.StatusBarItem, statusParams: StatusParams) {
 	if (statusParams.state === "init") {
 		status = "? MN";
 	} else if (statusParams.state === "ok") {
-		status = `✓ MN (${statusParams.notes})`;
+		status = `✓ MN (${statusParams.docCount})`;
 	} else {
 		status = '☠️ MN';
 	}
