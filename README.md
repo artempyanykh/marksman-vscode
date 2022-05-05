@@ -55,5 +55,5 @@ See the [project page][mn] for more detailed information.
 [zettel-wiki]: https://en.wikipedia.org/wiki/Zettelkasten
 [roam]: https://roamresearch.com
 [md-memo]: https://github.com/svsool/vscode-memo
-[mn]: https://github.com/artempyanykh/zeta-note
-[mn-releases]: https://github.com/artempyanykh/zeta-note/releases
+[mn]: https://github.com/artempyanykh/marksman
+[mn-releases]: https://github.com/artempyanykh/marksman/releases
