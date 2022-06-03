@@ -8,15 +8,21 @@ See the [project page][mn] for more detailed information.
 ## Screenshots
 
 - Hover preview:
-  ![Hover](./assets/readme/hover.png)
-- Completion (note):
-  ![Completion for note](./assets/readme/completion-note.png)
-- Completion (heading):
-  ![Completion for heading](./assets/readme/completion-heading.png)
-- "Show References" Code Lens:
-  ![Show references code lens](./assets/readme/code-lens-show-refs.png)
-- Project-wide diagnostics for broken references:
-  ![Diagnostics](./assets/readme/diagnostics.png)
+  ![Hover](./assets/readme/vsc-wiki-hover.png)
+- Completion:
+  
+  - Wiki link to another document:
+    ![Completion for wiki](./assets/readme/vsc-wiki-compl.png)
+
+  - Wiki link to a subsection of the current document:
+    ![Completion for wiki heading](./assets/readme/vsc-wiki-heading-compl.png)
+
+  - Reference link:
+    ![Completion for ref link](./assets/readme/vsc-ref-compl.png)
+- "Show References":
+  ![Show references](./assets/readme/vsc-find-references.png)
+- Project-wide diagnostics for broken wiki-links:
+  ![Diagnostics](./assets/readme/vsc-diag.png)
 
 ## Installation
 
