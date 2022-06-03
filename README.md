@@ -1,8 +1,7 @@
 # Marksman VSCode
 
 Integrates [Marksman][mn] language server into VSCode for delightful Markdown
-note taking experience. The main use-case is [Zettelkasten-like][zettel-wiki]
-note-taking, but you can write your notes any way you like really.
+note taking experience.
 
 See the [project page][mn] for more detailed information.
 
@@ -52,7 +51,6 @@ See the [project page][mn] for more detailed information.
 - **Local installation**:
   - Run `code --install-extension [path-to-vsix]` to install the locally built extension.
 
-[zettel-wiki]: https://en.wikipedia.org/wiki/Zettelkasten
 [roam]: https://roamresearch.com
 [md-memo]: https://github.com/svsool/vscode-memo
 [mn]: https://github.com/artempyanykh/marksman
