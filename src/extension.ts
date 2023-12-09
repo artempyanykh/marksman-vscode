@@ -37,12 +37,12 @@ const deadStatus: StatusParams = { state: "dead", docCount: 0 };
 
 const extId = "marksman";
 const extName = "Marksman";
-const compatibleServerRelease = "2022-08-19";
+const compatibleServerRelease = "2023-12-09";
 const releaseBaseUrl = "https://github.com/artempyanykh/marksman/releases/download";
 
 const statusNotificationType = new NotificationType<StatusParams>("marksman/status");
 
-type ShowReferencesData = {
+type FindReferencesData = {
 	uri: URI,
 	position: Position,
 	locations: Location[]
@@ -54,7 +54,7 @@ type FollowLinkData = {
 };
 
 type ExperimentalCapabilities = {
-	codeLensShowReferences?: boolean,
+	codeLensFindReferences?: boolean,
 	followLinks?: boolean
 	statusNotification?: boolean
 };
@@ -62,7 +62,7 @@ type ExperimentalCapabilities = {
 class ExperimentalFeatures implements StaticFeature {
 	fillClientCapabilities(capabilities: ClientCapabilities): void {
 		const experimental: ExperimentalCapabilities = capabilities.experimental ?? {};
-		experimental.codeLensShowReferences = true;
+		experimental.codeLensFindReferences = true;
 		experimental.followLinks = true;
 		experimental.statusNotification = true;
 
@@ -100,31 +100,8 @@ export async function activate(context: vscode.ExtensionContext) {
 			outputchannel.show(true);
 		}
 	});
-	let showReferencesCmd = vscode.commands.registerCommand(`${extId}.showReferences`, async (data: ShowReferencesData) => {
-		if (client) {
-			await vscode.commands.executeCommand(
-				'editor.action.showReferences',
-				vscode.Uri.parse(data.uri),
-				client.protocol2CodeConverter.asPosition(data.position),
-				data.locations.map(client.protocol2CodeConverter.asLocation),
-			);
-		}
-	});
-	let followLinkCmd = vscode.commands.registerCommand(`${extId}.followLink`, async (data: FollowLinkData) => {
-		if (client) {
-			const fromLoc = client.protocol2CodeConverter.asLocation(data.from);
-			const toLoc = client.protocol2CodeConverter.asLocation(data.to);
-			await vscode.commands.executeCommand(
-				'editor.action.goToLocations',
-				fromLoc.uri,
-				fromLoc.range.start,
-				[toLoc],
-				"goto",
-				"Couldn't locate the target of the link"
-
-			);
-		}
-	});
+	let findReferencesCmd = vscode.commands.registerCommand(`${extId}.findReferences`, findReferencesCmdImpl);
+	let followLinkCmd = vscode.commands.registerCommand(`${extId}.followLink`, followLinkCmdImpl);
 
 	if (client) {
 		context.subscriptions.push(client.start());
@@ -132,9 +109,36 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		restartServerCmd,
 		showOutputCmd,
-		showReferencesCmd,
+		findReferencesCmd,
 		followLinkCmd
 	);
+}
+
+async function findReferencesCmdImpl(data: FindReferencesData) {
+	if (client) {
+		await vscode.commands.executeCommand(
+			'editor.action.showReferences',
+			vscode.Uri.parse(data.uri),
+			client.protocol2CodeConverter.asPosition(data.position),
+			data.locations.map(client.protocol2CodeConverter.asLocation),
+		);
+	}
+}
+
+async function followLinkCmdImpl(data: FollowLinkData) {
+	if (client) {
+		const fromLoc = client.protocol2CodeConverter.asLocation(data.from);
+		const toLoc = client.protocol2CodeConverter.asLocation(data.to);
+		await vscode.commands.executeCommand(
+			'editor.action.goToLocations',
+			fromLoc.uri,
+			fromLoc.range.start,
+			[toLoc],
+			"goto",
+			"Couldn't locate the target of the link"
+
+		);
+	}
 }
 
 async function connectToServer(context: vscode.ExtensionContext, status: vscode.StatusBarItem): Promise<LanguageClient | null> {
@@ -208,13 +212,16 @@ function serverBinName(): string {
 
 function releaseBinName(): string {
 	const platform = os.platform();
+	const arch = os.arch();
 
-	if (platform === 'win32') {
-		return 'marksman-windows.exe';
+	if (platform === 'win32' && arch === 'x64') {
+		return 'marksman.exe';
 	} else if (platform === 'darwin') {
 		return 'marksman-macos';
-	} else if (platform === 'linux') {
-		return 'marksman-linux';
+	} else if (platform === 'linux' && arch === 'x64') {
+		return 'marksman-linux-x64';
+	} else if (platform === 'linux' && arch === 'arm64') {
+		return 'marksman-linux-arm64';
 	} else {
 		throw new Error(`Unsupported platform: ${platform}`);
 	}
